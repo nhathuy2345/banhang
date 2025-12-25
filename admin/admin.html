@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Admin – Shop Điện Cơ 247</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body{
+  margin:0;
+  font-family:system-ui;
+  background:#020617;
+  color:#e5e7eb;
+  padding:20px
+}
+.container{max-width:1200px;margin:auto}
+h1{color:#f9fafb}
+
+.card{
+  background:#fff;
+  color:#111827;
+  padding:20px;
+  border-radius:16px;
+  margin-bottom:20px
+}
+
+input,select{
+  padding:8px;
+  width:100%;
+  margin:6px 0
+}
+button{
+  padding:8px 16px;
+  border:none;
+  border-radius:999px;
+  cursor:pointer;
+  background:#2563eb;
+  color:#fff;
+  font-weight:600
+}
+button.secondary{background:#e5e7eb;color:#111827}
+button.danger{background:#dc2626}
+
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px;border-bottom:1px solid #e5e7eb}
+
+.status-wait{color:#f59e0b;font-weight:600}
+.status-paid{color:#16a34a;font-weight:600}
+.status-done{color:#2563eb;font-weight:600}
+</style>
+</head>
+
+<body>
+<div class="container">
+  <h1>⚙️ Admin – Shop Điện Cơ 247</h1>
+
+  <!-- THÊM ĐƠN THỦ CÔNG -->
+  <div class="card">
+    <h2>➕ Thêm đơn hàng</h2>
+    <input id="customer" placeholder="Tên khách hàng">
+    <input id="total" type="number" placeholder="Tổng tiền">
+    <select id="method">
+      <option>Chuyển khoản QR</option>
+      <option>Tiền mặt</option>
+      <option>Gọi điện</option>
+    </select>
+    <button onclick="addOrder()">Thêm đơn</button>
+  </div>
+
+  <!-- DANH SÁCH ĐƠN -->
+  <div class="card">
+    <h2>📦 Danh sách đơn hàng</h2>
+    <div id="orders"></div>
+  </div>
+</div>
+
+<script>
+/* ====== LOGIN ĐƠN GIẢN ====== */
+const ADMIN_USER="admin";
+const ADMIN_PASS="123456";
+if(!sessionStorage.getItem("dc_admin")){
+  const u=prompt("Admin user:");
+  const p=prompt("Admin pass:");
+  if(u!==ADMIN_USER || p!==ADMIN_PASS){
+    alert("Sai quyền truy cập");
+    location.href="index.html";
+  }
+  sessionStorage.setItem("dc_admin","ok");
+}
+
+/* ====== STORAGE ====== */
+const ORDERS_KEY="dc_orders";
+const PRODUCT_KEY="dc_products";
+let orders=JSON.parse(localStorage.getItem(ORDERS_KEY))||[];
+
+/* ====== SAVE ====== */
+function save(){
+  localStorage.setItem(ORDERS_KEY,JSON.stringify(orders));
+}
+
+/* ====== ADD ORDER ====== */
+function addOrder(){
+  const name=document.getElementById("customer").value.trim();
+  const total=Number(document.getElementById("total").value);
+  const method=document.getElementById("method").value;
+  if(!name||total<=0){alert("Thiếu thông tin");return;}
+
+  orders.push({
+    id:"ORD_"+Date.now(),
+    customer:name,
+    total,
+    method,
+    items:[],
+    status:"wait",
+    created:new Date().toLocaleString()
+  });
+  save();render();
+}
+
+/* ====== SET STATUS + TRỪ KHO ====== */
+function setStatus(i,status){
+  orders[i].status=status;
+
+  if(status==="done"){
+    let products=JSON.parse(localStorage.getItem(PRODUCT_KEY))||[];
+    orders[i].items.forEach(it=>{
+      const p=products.find(x=>x.id===it.id);
+      if(p) p.stock=Math.max(0,p.stock-it.qty);
+    });
+    localStorage.setItem(PRODUCT_KEY,JSON.stringify(products));
+  }
+
+  save();render();
+}
+
+/* ====== DELETE ====== */
+function removeOrder(i){
+  if(confirm("Xóa đơn này?")){
+    orders.splice(i,1);
+    save();render();
+  }
+}
+
+/* ====== IN HÓA ĐƠN ====== */
+function printInvoice(i){
+  const o=orders[i];
+  const win=window.open("","_blank");
+  win.document.write(`
+    <h2>HÓA ĐƠN – SHOP ĐIỆN CƠ 247</h2>
+    <p>Mã đơn: ${o.id}</p>
+    <p>Khách hàng: ${o.customer}</p>
+    <p>Ngày: ${o.created}</p>
+    <hr>
+    ${o.items.map(it=>`
+      ${it.name} × ${it.qty} = ${(it.price*it.qty).toLocaleString()} ₫<br>
+    `).join("")}
+    <hr>
+    <h3>Tổng tiền: ${o.total.toLocaleString()} ₫</h3>
+  `);
+  win.print();
+}
+
+/* ====== RENDER ====== */
+function render(){
+  const el=document.getElementById("orders");
+  if(orders.length===0){el.innerHTML="Chưa có đơn";return;}
+
+  let html="<table><tr><th>Mã</th><th>Khách</th><th>Tổng</th><th>TT</th><th></th></tr>";
+  orders.forEach((o,i)=>{
+    html+=`
+      <tr>
+        <td>${o.id}</td>
+        <td>${o.customer}</td>
+        <td>${o.total.toLocaleString()} ₫</td>
+        <td class="status-${o.status}">
+          ${o.status==="wait"?"Chờ TT":o.status==="paid"?"Đã TT":"Hoàn tất"}
+        </td>
+        <td>
+          <button onclick="setStatus(${i},'paid')">✔</button>
+          <button onclick="setStatus(${i},'done')">🚚</button>
+          <button onclick="printInvoice(${i})">🧾</button>
+          <button class="danger" onclick="removeOrder(${i})">🗑</button>
+        </td>
+      </tr>`;
+  });
+  html+="</table>";
+  el.innerHTML=html;
+}
+render();
+</script>
+</body>
+</html>
