@@ -1,192 +1,121 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<title>Admin – Shop Điện Cơ 247</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8" />
+<title>Admin – Quản lý đơn hàng</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-body{
-  margin:0;
-  font-family:system-ui;
-  background:#020617;
-  color:#e5e7eb;
-  padding:20px
+body {
+  background:#0f172a; color:#e5e7eb;
+  font-family:system-ui,sans-serif; padding:20px;
 }
-.container{max-width:1200px;margin:auto}
-h1{color:#f9fafb}
-
-.card{
-  background:#fff;
-  color:#111827;
-  padding:20px;
-  border-radius:16px;
-  margin-bottom:20px
+.card { background:#1e293b; padding:20px; border-radius:12px; }
+table { width:100%; border-collapse:collapse; margin-top:15px; }
+th,td { padding:10px; border-bottom:1px solid #334155; }
+th { color:#fbbf24; font-size:13px; }
+select {
+  background:#020617; color:white;
+  border:1px solid #334155;
+  padding:6px; border-radius:6px;
 }
-
-input,select{
-  padding:8px;
-  width:100%;
-  margin:6px 0
-}
-button{
-  padding:8px 16px;
-  border:none;
-  border-radius:999px;
-  cursor:pointer;
-  background:#2563eb;
-  color:#fff;
-  font-weight:600
-}
-button.secondary{background:#e5e7eb;color:#111827}
-button.danger{background:#dc2626}
-
-table{width:100%;border-collapse:collapse}
-th,td{padding:8px;border-bottom:1px solid #e5e7eb}
-
-.status-wait{color:#f59e0b;font-weight:600}
-.status-paid{color:#16a34a;font-weight:600}
-.status-done{color:#2563eb;font-weight:600}
 </style>
 </head>
 
 <body>
-<div class="container">
-  <h1>⚙️ Admin – Shop Điện Cơ 247</h1>
+<h1>⚙️ Quản lý đơn hàng</h1>
 
-  <!-- THÊM ĐƠN THỦ CÔNG -->
-  <div class="card">
-    <h2>➕ Thêm đơn hàng</h2>
-    <input id="customer" placeholder="Tên khách hàng">
-    <input id="total" type="number" placeholder="Tổng tiền">
-    <select id="method">
-      <option>Chuyển khoản QR</option>
-      <option>Tiền mặt</option>
-      <option>Gọi điện</option>
-    </select>
-    <button onclick="addOrder()">Thêm đơn</button>
-  </div>
-
-  <!-- DANH SÁCH ĐƠN -->
-  <div class="card">
-    <h2>📦 Danh sách đơn hàng</h2>
-    <div id="orders"></div>
-  </div>
+<div class="card">
+<table>
+<thead>
+<tr>
+  <th>Mã</th>
+  <th>Khách</th>
+  <th>SĐT</th>
+  <th>Tổng</th>
+  <th>Giao hàng</th>
+  <th>Thanh toán</th>
+  <th>Hình thức</th>
+</tr>
+</thead>
+<tbody id="orders"></tbody>
+</table>
 </div>
 
 <script>
-/* ====== LOGIN ĐƠN GIẢN ====== */
-const ADMIN_USER="admin";
-const ADMIN_PASS="123456";
-if(!sessionStorage.getItem("dc_admin")){
-  const u=prompt("Admin user:");
-  const p=prompt("Admin pass:");
-  if(u!==ADMIN_USER || p!==ADMIN_PASS){
-    alert("Sai quyền truy cập");
-    location.href="index.html";
-  }
-  sessionStorage.setItem("dc_admin","ok");
-}
+/* ===== CONFIG ===== */
+const supabaseClient = supabase.createClient(
+  "https://jviflefikptwitspugae.supabase.co",
+  "sb_publishable_NR9e3NQFQ8H1QGBzHVHjDQ_DZ_n_MQd"
+);
 
-/* ====== STORAGE ====== */
-const ORDERS_KEY="dc_orders";
-const PRODUCT_KEY="dc_products";
-let orders=JSON.parse(localStorage.getItem(ORDERS_KEY))||[];
+/* ===== LOAD ORDERS ===== */
+async function loadOrders() {
+  const { data, error } = await supabaseClient
+    .from("orders")
+    .select("*")
+    .order("order_code", { ascending:false });
 
-/* ====== SAVE ====== */
-function save(){
-  localStorage.setItem(ORDERS_KEY,JSON.stringify(orders));
-}
-
-/* ====== ADD ORDER ====== */
-function addOrder(){
-  const name=document.getElementById("customer").value.trim();
-  const total=Number(document.getElementById("total").value);
-  const method=document.getElementById("method").value;
-  if(!name||total<=0){alert("Thiếu thông tin");return;}
-
-  orders.push({
-    id:"ORD_"+Date.now(),
-    customer:name,
-    total,
-    method,
-    items:[],
-    status:"wait",
-    created:new Date().toLocaleString()
-  });
-  save();render();
-}
-
-/* ====== SET STATUS + TRỪ KHO ====== */
-function setStatus(i,status){
-  orders[i].status=status;
-
-  if(status==="done"){
-    let products=JSON.parse(localStorage.getItem(PRODUCT_KEY))||[];
-    orders[i].items.forEach(it=>{
-      const p=products.find(x=>x.id===it.id);
-      if(p) p.stock=Math.max(0,p.stock-it.qty);
-    });
-    localStorage.setItem(PRODUCT_KEY,JSON.stringify(products));
+  if (error) {
+    alert(error.message);
+    return;
   }
 
-  save();render();
+  document.getElementById("orders").innerHTML = data.map(o => `
+<tr>
+  <td>${o.order_code}</td>
+  <td>${o.customer_name || "-"}</td>
+  <td>${o.phone || "-"}</td>
+  <td>${Number(o.total||0).toLocaleString()}đ</td>
+
+  <td>
+    <select onchange="updateOrder('${o.order_code}','delivery_status',this.value)">
+      <option value="pending" ${o.delivery_status==='pending'?'selected':''}>Chưa giao</option>
+      <option value="delivered" ${o.delivery_status==='delivered'?'selected':''}>Đã giao</option>
+    </select>
+  </td>
+
+  <td>
+    <select onchange="updateOrder('${o.order_code}','payment_status',this.value)">
+      <option value="unpaid" ${o.payment_status==='unpaid'?'selected':''}>Chưa TT</option>
+      <option value="paid" ${o.payment_status==='paid'?'selected':''}>Đã TT</option>
+    </select>
+  </td>
+
+  <td>
+    <select onchange="updateOrder('${o.order_code}','payment_method',this.value)">
+      <option value="cash" ${o.payment_method==='cash'?'selected':''}>Tiền mặt</option>
+      <option value="transfer" ${o.payment_method==='transfer'?'selected':''}>Chuyển khoản</option>
+    </select>
+  </td>
+</tr>
+`).join("");
 }
 
-/* ====== DELETE ====== */
-function removeOrder(i){
-  if(confirm("Xóa đơn này?")){
-    orders.splice(i,1);
-    save();render();
+/* ===== UPDATE ORDER (FIXED) ===== */
+async function updateOrder(orderCode, field, value) {
+  const { error } = await supabaseClient
+    .from("orders")
+    .update({ [field]: value })
+    .eq("order_code", orderCode);
+
+  if (error) {
+    alert(error.message);
   }
 }
 
-/* ====== IN HÓA ĐƠN ====== */
-function printInvoice(i){
-  const o=orders[i];
-  const win=window.open("","_blank");
-  win.document.write(`
-    <h2>HÓA ĐƠN – SHOP ĐIỆN CƠ 247</h2>
-    <p>Mã đơn: ${o.id}</p>
-    <p>Khách hàng: ${o.customer}</p>
-    <p>Ngày: ${o.created}</p>
-    <hr>
-    ${o.items.map(it=>`
-      ${it.name} × ${it.qty} = ${(it.price*it.qty).toLocaleString()} ₫<br>
-    `).join("")}
-    <hr>
-    <h3>Tổng tiền: ${o.total.toLocaleString()} ₫</h3>
-  `);
-  win.print();
-}
+/* ===== REALTIME ===== */
+supabaseClient
+  .channel("orders-realtime")
+  .on(
+    "postgres_changes",
+    { event:"*", schema:"public", table:"orders" },
+    () => loadOrders()
+  )
+  .subscribe();
 
-/* ====== RENDER ====== */
-function render(){
-  const el=document.getElementById("orders");
-  if(orders.length===0){el.innerHTML="Chưa có đơn";return;}
-
-  let html="<table><tr><th>Mã</th><th>Khách</th><th>Tổng</th><th>TT</th><th></th></tr>";
-  orders.forEach((o,i)=>{
-    html+=`
-      <tr>
-        <td>${o.id}</td>
-        <td>${o.customer}</td>
-        <td>${o.total.toLocaleString()} ₫</td>
-        <td class="status-${o.status}">
-          ${o.status==="wait"?"Chờ TT":o.status==="paid"?"Đã TT":"Hoàn tất"}
-        </td>
-        <td>
-          <button onclick="setStatus(${i},'paid')">✔</button>
-          <button onclick="setStatus(${i},'done')">🚚</button>
-          <button onclick="printInvoice(${i})">🧾</button>
-          <button class="danger" onclick="removeOrder(${i})">🗑</button>
-        </td>
-      </tr>`;
-  });
-  html+="</table>";
-  el.innerHTML=html;
-}
-render();
+/* ===== INIT ===== */
+loadOrders();
 </script>
 </body>
 </html>

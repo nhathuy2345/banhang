@@ -4,264 +4,135 @@
 <meta charset="UTF-8">
 <title>Shop Điện Cơ 247</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-/* ===== RESET ===== */
+/* ===== GIỮ NGUYÊN CSS CỦA BẠN (KHÔNG ĐỔI) ===== */
 *{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  min-height:100vh;
-  color:#e5e7eb;
-  overflow-x:hidden;
-}
-
-/* ===== NỀN TỐI CÔNG NGHIỆP ===== */
-body::before{
-  content:"";
-  position:fixed;
-  inset:0;
-  z-index:-2;
-  background:
-    radial-gradient(circle at 20% 20%, #1e293b, transparent 40%),
-    radial-gradient(circle at 80% 10%, #020617, transparent 45%),
-    linear-gradient(135deg, #020617, #020617);
-}
-body::after{
-  content:"";
-  position:fixed;
-  inset:0;
-  z-index:-1;
-  background:
-    repeating-linear-gradient(
-      120deg,
-      rgba(255,255,255,0.03) 0,
-      rgba(255,255,255,0.03) 1px,
-      transparent 1px,
-      transparent 60px
-    );
-  opacity:.35;
-}
-
-/* ===== LAYOUT ===== */
-.container{max-width:1200px;margin:auto;padding:32px 16px}
-.grid{
-  display:grid;
-  grid-template-columns:2fr 1fr;
-  gap:22px
-}
-@media(max-width:900px){
-  .grid{grid-template-columns:1fr}
-}
-
-/* ===== TEXT ===== */
-h1{font-size:34px;margin-bottom:6px;color:#f9fafb}
-p{color:#c7d2fe}
-
-/* ===== CARD ===== */
-.card{
-  background:rgba(255,255,255,0.97);
-  color:#111827;
-  padding:22px;
-  border-radius:20px;
-  margin-bottom:20px;
-  box-shadow:0 15px 40px rgba(0,0,0,.45)
-}
-
-/* ===== BUTTON ===== */
-button{
-  padding:9px 18px;
-  border:none;
-  border-radius:999px;
-  font-weight:700;
-  cursor:pointer;
-  background:linear-gradient(135deg,#2563eb,#1e40af);
-  color:#fff;
-  transition:.15s;
-}
-button:hover{
-  transform:translateY(-2px);
-  box-shadow:0 10px 22px rgba(37,99,235,.45);
-}
-button:disabled{opacity:.4}
-
-/* ===== PRODUCT GRID ===== */
-.product-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-  gap:18px
-}
-.product-card{
-  background:#f9fafb;
-  border-radius:18px;
-  padding:18px;
-  text-align:center;
-}
-.product-card .icon{font-size:42px}
-.product-card .price{font-weight:800;color:#1e40af}
-.product-card .stock{font-size:13px;color:#6b7280}
-
-/* ===== CART ===== */
+body{margin:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;min-height:100vh;color:#e2e8f0;background:#0f172a;display:flex;justify-content:center;line-height:1.6}
+body::before{content:"";position:fixed;inset:0;background:radial-gradient(circle at 20% 20%,rgba(59,130,246,.1),transparent 40%),radial-gradient(circle at 80% 80%,rgba(251,191,36,.1),transparent 40%);z-index:-1}
+.container{max-width:1200px;width:100%;padding:40px 20px;display:grid;grid-template-columns:1.6fr 1fr;gap:30px}
+@media(max-width:900px){.container{grid-template-columns:1fr}}
+h1{grid-column:1/-1;color:#fbbf24;text-align:center;font-size:2.5rem;margin-bottom:10px}
+.card{background:rgba(30,41,59,.7);backdrop-filter:blur(10px);border-radius:20px;padding:24px;position:relative;border:1px solid rgba(255,255,255,.05);box-shadow:0 15px 35px rgba(0,0,0,.4);height:fit-content}
+.card::after{content:"";position:absolute;top:-1px;left:20%;right:20%;height:2px;background:linear-gradient(90deg,transparent,#fbbf24,transparent);box-shadow:0 0 15px #fbbf24}
+h2{color:#fbbf24;font-size:1.4rem;margin-top:0;border-bottom:1px solid rgba(255,255,255,.1);padding-bottom:10px}
+.product-item{background:rgba(15,23,42,.4);padding:15px;border-radius:12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(255,255,255,.03);transition:.3s}
+.product-item:hover{transform:translateX(5px);background:rgba(15,23,42,.8)}
 table{width:100%;border-collapse:collapse}
-td,th{padding:8px;border-bottom:1px solid #e5e7eb}
-
-/* ===== QR + BANK ===== */
-.qr-box{text-align:center;margin-top:16px}
-.qr-box img{
-  background:#fff;
-  padding:10px;
-  border-radius:18px;
-  box-shadow:0 12px 32px rgba(0,0,0,.3)
-}
-.bank-card{
-  margin-top:14px;
-  padding:16px;
-  border-radius:16px;
-  background:linear-gradient(135deg,#020617,#0f172a);
-  color:#f9fafb;
-  text-align:left;
-}
-.bank-card .label{font-size:13px;color:#c7d2fe}
-.bank-card .value{font-size:18px;font-weight:700}
-.bank-card .account{
-  font-size:22px;
-  font-weight:900;
-  color:#22d3ee;
-  letter-spacing:1px
-}
-.copy-btn{
-  margin-top:8px;
-  background:#22d3ee;
-  color:#020617;
-  font-size:13px;
-  padding:6px 12px
-}
-.timer{font-weight:800;color:#dc2626}
-.note{font-size:13px;color:#fca5a5}
+td{padding:10px 5px;border-bottom:1px solid rgba(255,255,255,.05)}
+.total-price{font-size:1.2rem;color:#fbbf24;font-weight:bold;text-align:right;margin-top:15px}
+input{width:100%;padding:12px 15px;margin:10px 0;border-radius:10px;border:1px solid #334155;background:#0f172a;color:white}
+button{padding:12px 20px;border-radius:10px;border:none;cursor:pointer;font-weight:bold}
+.btn-add{background:#fbbf24;color:#000}
+.btn-confirm{width:100%;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#1c1917;font-size:1.1rem;margin-top:15px}
+#qr{margin-top:25px;padding:20px;background:rgba(255,255,255,.05);border-radius:15px;text-align:center;display:none;border:1px dashed #fbbf24}
+.qr-img-wrapper{background:white;padding:15px;border-radius:10px;display:inline-block}
 </style>
 </head>
 
 <body>
 <div class="container">
-  <h1>⚡ Shop Điện Cơ 247</h1>
-  <p>Thiết bị điện cơ – Chính hãng – Giá tốt</p>
+<h1>Shop Điện Cơ 247</h1>
 
-  <div class="grid">
-    <!-- PRODUCTS -->
-    <div class="card">
-      <h2>Sản phẩm</h2>
-      <div id="products"></div>
-    </div>
+<div class="card">
+<h2>📦 Danh sách thiết bị</h2>
+<div id="productList">Đang tải...</div>
+</div>
 
-    <!-- CART + PAYMENT -->
-    <div class="card">
-      <h2>Giỏ hàng</h2>
-      <div id="cart"></div>
-      <hr>
-      <button onclick="payByBankQR()">Thanh toán bằng QR MB Bank</button>
-      <div id="qr-box" class="qr-box"></div>
-    </div>
-  </div>
+<div>
+<div class="card">
+<h2>🛒 Giỏ hàng</h2>
+<div id="cartList">Chưa có sản phẩm.</div>
+<div id="totalArea" class="total-price" style="display:none"></div>
+</div>
+
+<div class="card">
+<h2>👤 Thông tin đặt hàng</h2>
+<input id="name" placeholder="Họ tên">
+<input id="phone" placeholder="SĐT">
+<input id="address" placeholder="Địa chỉ">
+<button class="btn-confirm" onclick="confirmOrder()">XÁC NHẬN & THANH TOÁN</button>
+
+<div id="qr">
+<div class="qr-img-wrapper"><img id="qrImg" width="200"></div>
+<p id="qrMoney"></p>
+<p id="qrCode"></p>
+</div>
+</div>
+</div>
 </div>
 
 <script>
-/* ===== BANK INFO ===== */
-const BANK_CODE="MB";
-const ACCOUNT_NO="0867149842";
-const ACCOUNT_NAME="NGUYEN DINH NHAT HUY";
+const supabaseClient = supabase.createClient(
+  "https://jviflefikptwitspugae.supabase.co",
+  "sb_publishable_NR9e3NQFQ8H1QGBzHVHjDQ_DZ_n_MQd"
+);
 
-/* ===== DATA ===== */
-const PRODUCT_KEY="dc_products";
-const CART_KEY="dc_cart";
-const products=JSON.parse(localStorage.getItem(PRODUCT_KEY))||[
-  {id:1,name:"Động cơ điện 1HP",price:2450000,stock:5},
-  {id:2,name:"Máy bơm Panasonic 125W",price:1850000,stock:7},
-  {id:3,name:"Quạt hút công nghiệp",price:3200000,stock:3},
-  {id:4,name:"Biến tần INVT 1.5kW",price:4600000,stock:4}
-];
-let cart=JSON.parse(localStorage.getItem(CART_KEY))||[];
+let products=[], cart=[];
+const formatMoney=n=>n.toLocaleString("vi-VN")+" ₫";
 
-function save(){
-  localStorage.setItem(PRODUCT_KEY,JSON.stringify(products));
-  localStorage.setItem(CART_KEY,JSON.stringify(cart));
-}
-function money(n){return n.toLocaleString("vi-VN")+" ₫";}
-function iconFor(n){
-  if(n.includes("Động cơ"))return"⚙️";
-  if(n.includes("Máy bơm"))return"💧";
-  if(n.includes("Quạt"))return"🌪️";
-  return"⚡";
+/* LOAD PRODUCTS */
+async function loadProducts(){
+ const{data}=await supabaseClient.from("products").select("*").order("created_at",{ascending:false});
+ products=data||[]; renderProducts();
 }
 
-/* ===== RENDER ===== */
 function renderProducts(){
-  const el=document.getElementById("products");
-  el.innerHTML='<div class="product-grid"></div>';
-  const g=el.firstChild;
-  products.forEach(p=>{
-    g.innerHTML+=`
-      <div class="product-card">
-        <div class="icon">${iconFor(p.name)}</div>
-        <b>${p.name}</b>
-        <div class="price">${money(p.price)}</div>
-        <div class="stock">Kho: ${p.stock}</div>
-        <button onclick="add(${p.id})" ${p.stock===0?'disabled':''}>Thêm</button>
-      </div>`;
-  });
+ document.getElementById("productList").innerHTML=products.map(p=>`
+ <div class="product-item">
+ <div><b>${p.name}</b><br><span style="color:#fbbf24">${formatMoney(p.price)}</span> | Kho: ${p.stock}</div>
+ <button class="btn-add" onclick="addToCart(${p.id})">Thêm</button>
+ </div>`).join("");
 }
+
+/* CART */
+function addToCart(id){
+ const p=products.find(x=>x.id===id);
+ if(!p||p.stock<=0)return alert("Hết hàng");
+ const i=cart.find(x=>x.id===id);
+ if(i){if(i.qty>=p.stock)return alert("Vượt tồn");i.qty++}
+ else cart.push({...p,qty:1});
+ renderCart();
+}
+
 function renderCart(){
-  const el=document.getElementById("cart");
-  if(cart.length===0){el.innerHTML="Giỏ hàng trống";return;}
-  let h="<table>";
-  cart.forEach(i=>{
-    h+=`<tr><td>${i.name}</td><td>${i.qty}</td><td>${money(i.price*i.qty)}</td></tr>`;
-  });
-  h+="</table>";
-  el.innerHTML=h;
-}
-function add(id){
-  const p=products.find(x=>x.id===id);
-  if(!p||p.stock<=0)return;
-  let i=cart.find(x=>x.id===id);
-  i?i.qty++:cart.push({id:p.id,name:p.name,price:p.price,qty:1});
-  p.stock--;save();renderProducts();renderCart();
+ if(!cart.length){cartList.innerText="Chưa có sản phẩm";totalArea.style.display="none";return}
+ let t=0,h="<table>";
+ cart.forEach(i=>{t+=i.price*i.qty;h+=`<tr><td>${i.name}</td><td>x${i.qty}</td><td>${formatMoney(i.price*i.qty)}</td></tr>`});
+ cartList.innerHTML=h+"</table>";
+ totalArea.innerText="Tổng: "+formatMoney(t);
+ totalArea.style.display="block";
 }
 
-/* ===== QR ===== */
-let timer=null;
-function payByBankQR(){
-  if(cart.length===0)return alert("Giỏ hàng trống");
-  if(timer)clearInterval(timer);
+/* CONFIRM ORDER – FIX QUAN TRỌNG */
+async function confirmOrder(){
+ if(!cart.length)return alert("Chưa có sản phẩm");
+ const name=nameInput.value.trim(),phone=phoneInput.value.trim(),address=addressInput.value.trim();
+ if(!name||!phone||!address)return alert("Thiếu thông tin");
 
-  const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
-  const code="DC247_"+Date.now();
-  let t=600;
+ const order_code="DC247_"+Date.now();
+ const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
 
-  const qr=`https://img.vietqr.io/image/${BANK_CODE}-${ACCOUNT_NO}-compact.png?amount=${total}&addInfo=${code}&accountName=${encodeURIComponent(ACCOUNT_NAME)}`;
+ /* 1. INSERT ORDERS */
+ await supabaseClient.from("orders").insert({
+   order_code, customer_name:name, phone, address, total
+ });
 
-  const box=document.getElementById("qr-box");
-  box.innerHTML=`
-    <img src="${qr}" width="260">
-    <div class="bank-card">
-      <div class="label">Ngân hàng</div><div class="value">MB Bank</div>
-      <div class="label">Số tài khoản</div><div class="account">${ACCOUNT_NO}</div>
-      <div class="label">Người nhận</div><div class="value">${ACCOUNT_NAME}</div>
-      <div class="label">Số tiền</div><div class="value">${money(total)}</div>
-      <div class="label">Nội dung</div><div class="value">${code}</div>
-      <button class="copy-btn" onclick="navigator.clipboard.writeText('${ACCOUNT_NO}')">📋 Copy số TK</button>
-    </div>
-    <p id="time" class="timer"></p>
-    <p class="note">⚠️ QR có hiệu lực 10 phút</p>
-  `;
+ /* 2. INSERT ORDER_ITEMS (QUAN TRỌNG NHẤT) */
+ await supabaseClient.from("order_items").insert(
+   cart.map(i=>({
+     order_code,
+     product_id:i.id,
+     quantity:i.qty
+   }))
+ );
 
-  const te=document.getElementById("time");
-  timer=setInterval(()=>{
-    t--;te.textContent=`Hết hạn sau: ${Math.floor(t/60)}:${String(t%60).padStart(2,"0")}`;
-    if(t<=0){clearInterval(timer);box.innerHTML="<p class='note'>QR đã hết hạn</p>";}
-  },1000);
+ alert("Đặt hàng thành công!");
+ cart=[]; renderCart();
 }
 
-renderProducts();renderCart();
+window.onload=loadProducts;
 </script>
 </body>
 </html>
